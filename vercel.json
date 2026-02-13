@@ -1,6 +1,18 @@
 {
+  "builds": [
+    {
+      "src": "valentine_book.html",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
-    { "src": "/images/(.*)", "dest": "/images/$1" },
-    { "src": "/.*", "dest": "/valentine_book.html" }
+    {
+      "src": "/images/(.*)",
+      "dest": "/images/$1"
+    },
+    {
+      "src": "/.*",
+      "dest": "/valentine_book.html"
+    }
   ]
 }
