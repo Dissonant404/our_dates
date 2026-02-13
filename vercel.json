@@ -1,6 +1,6 @@
 {
   "routes": [
     { "src": "/images/(.*)", "dest": "/images/$1" },
-    { "src": "/.*", "dest": "/index.html" }
+    { "src": "/.*", "dest": "/valentine_book.html" }
   ]
 }
