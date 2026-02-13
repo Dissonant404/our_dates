@@ -1,7 +1,7 @@
 {
   "builds": [
     {
-      "src": "valentine_book.html",
+      "src": "index.html",
       "use": "@vercel/static"
     }
   ],
@@ -12,7 +12,7 @@
     },
     {
       "src": "/.*",
-      "dest": "/valentine_book.html"
+      "dest": "/index.html"
     }
   ]
 }
