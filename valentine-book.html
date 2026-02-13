@@ -1,0 +1,921 @@
+<style type="text/css">
+    
+    @font-face {
+  font-family: PixelText;
+  src: url(https://assets.codepen.io/36869/Grand9KPixel.ttf);
+}
+
+:root {
+  font-family: 'PixelText', serif;
+  font-optical-sizing: auto;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(60, 20, 40, 0.9);
+  background-color: #ffd1dc; /* Soft pink background */
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+
+  /* sprite image - keeping same for animation mechanism */
+  --sprite-image: url(https://assets.codepen.io/36869/book.webp);
+
+  /* sprite animation settings */
+  /* animation duration */
+  --sprite-as: .8s;
+  /* animation direction */
+  --sprite-ad: normal;
+  /* animation fill mode */
+  --sprite-af: none;
+  /* animation play state */
+  --sprite-ap: running;
+  /* animation iteration count */
+  --sprite-ai: infinite;
+  /* animation timing function */
+  --sprite-at: linear;
+  /* animation frame rate */
+  --sprite-fr: 12;
+}
+
+@layer base {
+  *{
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 1rem;
+    background: linear-gradient(135deg, #ffb6c1 0%, #ff69b4 50%, #ff1493 100%);
+    position: relative;
+  }
+  
+  /* Add floating hearts background */
+  body::before {
+    content: "❤️🧡💛💚💙💜🖤🤍🤎";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 2rem;
+    opacity: 0.1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: space-around;
+    align-items: center;
+    pointer-events: none;
+    animation: float 20s linear infinite;
+  }
+
+  .sprite-wrapper {
+    position: relative;
+    width: 100%;
+    margin: 0 auto;
+  }
+}
+
+@layer main {
+  /* Frame start position */
+  @property --sprite-fs {
+    syntax: "<integer>";
+    initial-value: 0;
+    inherits: true
+  }
+  @property --_progress {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 0%;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+
+    /* sprite columns */
+    --sprite-c: 5;
+    /* sprite image height */
+    --sprite-h: 3000;
+    /* sprite image width */
+    --sprite-w: 9600;
+    /* sprite frames */
+    --sprite-f: 7;
+    /* animation duration based on frame rate */
+    --sprite-as: calc(var(--sprite-f) / var(--sprite-fr) * 1s);
+
+    /* frame rows */
+    --sprite-r: round(up, calc(var(--sprite-f) / var(--sprite-c)), 1);
+    /* frame height */
+    --sprite-sh: calc(var(--sprite-h) / var(--sprite-r));
+    /* frame target height, width */
+    --sprite-th: calc(var(--sprite-sh) / 2);
+
+    /* aspect ratio */
+    --sprite-ar: calc(var(--sprite-th) / var(--sprite-sh));
+    --sprite-uh: calc(var(--sprite-h) * var(--sprite-ar));
+    --sprite-uw: calc(var(--sprite-w) * var(--sprite-ar));
+
+    /* frame width */
+    --sprite-tw: calc(var(--sprite-uw) / var(--sprite-c));
+
+    > h1 {
+      color: #fff0f5; /* Lavender blush */
+      margin: 0;
+      width: fit-content;
+      font-weight: 500;
+      font-size: 2rem;
+      text-align: center;
+      text-shadow: 2px 2px 4px #ff1493;
+      background: linear-gradient(45deg, #ff69b4, #ffb6c1);
+      padding: 0.5rem 2rem;
+      border-radius: 30px;
+      border: 3px solid white;
+      position: relative;
+    }
+    
+    > h1::before,
+    > h1::after {
+      content: "🌹";
+      font-size: 2rem;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    > h1::before {
+      left: -1.5rem;
+    }
+    
+    > h1::after {
+      right: -1.5rem;
+    }
+
+    .book {
+      position: relative;
+      display: grid;
+      grid-template-areas:
+            "scroll scroll scroll"
+            "left markers right";
+      gap: 1rem;
+      filter: drop-shadow(0 10px 20px rgba(255, 20, 147, 0.3));
+
+      .sprite {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: calc(1px * var(--sprite-th));
+        width: calc(1px * var(--sprite-tw));
+        margin: calc(-1px * calc((var(--sprite-th) - (var(--sprite-th) * 0.6107)) / 2)) calc(-1px * calc((var(--sprite-tw) - (var(--sprite-tw) * 0.7042)) / 2));
+        background-image: var(--sprite-image);
+        transform-origin: center center;
+        background-repeat: no-repeat;
+        background-size: calc(1px * var(--sprite-uw)) calc(1px * var(--sprite-uh));
+        z-index: -1;
+
+        /* Frame end position */
+        --sprite-fe: calc(var(--sprite-f) * (var(--slides) - 1));
+        --sprite-fs-n: mod(var(--sprite-fs), var(--sprite-f));
+        /* calculate the row and column position */
+        --row: calc(round(down, calc(calc(var(--sprite-tw) * var(--sprite-fs-n)) / var(--sprite-uw)), 1) * var(--sprite-th));
+        --col: mod(calc(var(--sprite-tw) * var(--sprite-fs-n)), var(--sprite-uw));
+
+        background-position: calc(-1px * var(--col)) calc(-1px * var(--row));
+        animation: frame var(--sprite-as) var(--sprite-at) 0s var(--sprite-ad) var(--sprite-af) var(--sprite-ap);
+        animation-timeline: --carousel-timeline;
+      }
+
+      .carousel {
+        counter-increment: curpage;
+        grid-area: scroll;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+
+        display: grid;
+        margin: 0 auto;
+        width: calc(1px * (var(--sprite-tw) * 0.7042));
+        height: calc(1px * (var(--sprite-th) * 0.6107));
+        grid: 1fr / auto-flow 100%;
+        scroll-timeline: --carousel-timeline x;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        scroll-marker-group: after;
+        
+        /* Romantic border for the book */
+        border: 5px solid #fff0f5;
+        border-radius: 10px;
+        box-shadow: 0 0 0 2px #ff69b4, 0 0 0 5px #fff0f5;
+
+        &::scroll-button(*) {
+          inline-size: 64px;
+          aspect-ratio: 1;
+          border-radius: 50%; /* Make buttons round like hearts */
+          border: 3px solid #ff1493;
+          background-color: #fff0f5;
+          cursor: pointer;
+          box-shadow: 0 0 15px #ff69b4;
+          transition: all 0.3s ease;
+        }
+
+        &::scroll-button(*):disabled{
+          filter: invert(1);
+          opacity: 0.5;
+          border-color: #888;
+        }
+        &::scroll-button(*):not(:disabled):is(:hover, :active) {
+          transform: scale(1.1);
+          background-color: #ffb6c1;
+          box-shadow: 0 0 25px #ff1493;
+        }
+
+        &::scroll-button(*):not(:disabled):active {
+          scale: 90%;
+        }
+
+        &::scroll-button(left) {
+          content: "❤️" / "Scroll Left";
+          font-size: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #fff0f5;
+        }
+
+        &::scroll-button(right) {
+          content: "❤️" / "Scroll Right";
+          font-size: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          grid-area: right;
+          justify-self: flex-end;
+        }
+
+        &::scroll-marker-group {
+          content: "";
+          width: 100%;
+          height: 12px;
+          padding: 2px 0;
+          display: grid;
+          position: absolute;
+          grid-area: markers;
+
+          grid-auto-flow: column;
+          place-self: center;
+          overflow: hidden;
+          border: 2px solid #ff69b4;
+          border-radius: 10px;
+
+          background: linear-gradient(90deg, #ffb6c1 0%) no-repeat left center;
+          --_progress: calc(calc(100 / var(--slides)) * 1%);
+          background-size: var(--_progress, 20%) 100%;
+
+          animation: progress linear both;
+          animation-timeline: --carousel-timeline;
+        }
+
+        & > .carousel-item {
+          scroll-snap-stop: always;
+          scroll-snap-align: start;
+          animation: count-before linear forwards;
+          animation-range: exit;
+          counter-increment: page;
+          animation-timeline: view(x);
+
+          position: relative;
+          box-sizing: border-box;
+          color: #4a2c3a; /* Dark romantic color */
+
+          &::scroll-marker {
+            content: '❤️';
+            position: relative;
+            left: -1px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            box-shadow: 2px 0 0 #ff69b4;
+            font-size: 0.8rem;
+          }
+
+          &:last-of-type{
+            &::scroll-marker {
+              box-shadow: none;
+            }
+          }
+
+          .page-container {
+            display: flex;
+            gap: 3rem;
+            height: 100%;
+
+            animation: stay-centered linear both;
+            animation-timeline: view(x);
+            timeline-scope: --parallax-item;
+          }
+
+          .left-page, .right-page {
+            flex: 1;
+            font-size: small;
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: 1fr auto;
+            background: rgba(255, 240, 245, 0.9); /* Lavender blush background */
+            border-radius: 15px;
+            box-shadow: inset 0 0 20px rgba(255, 105, 180, 0.2);
+
+            &:after {
+              bottom: 15px;
+              color: #ff1493;
+              font-size: 1rem;
+            }
+
+            > div {
+              text-align: justify;
+              hyphens: auto;
+              line-height: normal;
+              display: block;
+              word-wrap: break-word;
+              padding: 10px;
+            }
+          }
+
+          /* Left page - SCRAPBOOK/PHOTO ALBUM STYLE - NO OVERLAP */
+          .left-page {
+            padding: 20px 0 20px 20px;
+            border-right: 2px dotted #ff69b4;
+            
+            > div {
+              display: block;
+              height: 100%;
+              position: relative;
+              background: #f8e0e8; /* Slightly darker background for scrapbook feel */
+              padding: 15px;
+              border-radius: 5px;
+            }
+            
+            /* Scrapbook layout - photos positioned in a grid-like pattern but with rotations */
+            .scrapbook-grid {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 15px 20px;
+              justify-content: center;
+              align-items: flex-start;
+              height: 100%;
+              overflow-y: auto;
+              padding: 10px 5px;
+            }
+            
+            /* Individual photo styling with individual rotations */
+            .scrapbook-photo {
+              background: white;
+              padding: 6px 6px 12px 6px; /* Polaroid style */
+              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+              border-radius: 2px;
+              transition: all 0.2s ease;
+              width: calc(33% - 15px); /* 3 photos per row with gap */
+              min-width: 175px;
+              max-width: 300px;
+              display: flex;
+              flex-direction: column;
+            }
+            
+            /* Individual rotation for each photo - creates scattered look without overlap */
+            .scrapbook-photo:nth-child(1) { transform: rotate(-3deg); }
+            .scrapbook-photo:nth-child(2) { transform: rotate(4deg); margin-top: 5px; }
+            .scrapbook-photo:nth-child(3) { transform: rotate(-5deg); }
+            .scrapbook-photo:nth-child(4) { transform: rotate(6deg); margin-top: 8px; }
+            .scrapbook-photo:nth-child(5) { transform: rotate(-2deg); }
+            .scrapbook-photo:nth-child(6) { transform: rotate(3deg); margin-top: 3px; }
+            .scrapbook-photo:nth-child(7) { transform: rotate(-4deg); }
+            .scrapbook-photo:nth-child(8) { transform: rotate(5deg); margin-top: 10px; }
+            .scrapbook-photo:nth-child(9) { transform: rotate(-3deg); }
+            .scrapbook-photo:nth-child(10) { transform: rotate(2deg); }
+            
+            .scrapbook-photo:hover {
+              transform: scale(1.05) rotate(0deg) !important;
+              z-index: 10;
+              box-shadow: 0 8px 16px rgba(255,20,147,0.3);
+            }
+            
+            .scrapbook-photo img {
+              width: 100%;
+              height: auto;
+              display: block;
+              border-radius: 2px;
+            }
+            
+            /* Photo caption */
+            .photo-caption {
+              font-size: 0.6rem;
+              text-align: center;
+              margin-top: 5px;
+              color: #d43f7a;
+              font-style: italic;
+            }
+            
+            /* Decorative elements - small stickers in corners */
+            .scrapbook-sticker {
+              position: absolute;
+              font-size: 1.2rem;
+              opacity: 0.4;
+              pointer-events: none;
+            }
+            
+            .sticker-1 {
+              top: 5px;
+              right: 5px;
+              transform: rotate(15deg);
+            }
+            
+            .sticker-2 {
+              bottom: 5px;
+              left: 5px;
+              transform: rotate(-10deg);
+            }
+            
+            &:after {
+              content: counter(curpage);
+              text-align: left;
+              display: block;
+              margin-top: 10px;
+            }
+          }
+
+          .right-page {
+            padding: 20px 20px 20px 0;
+            counter-increment: curpage;
+            
+            &:after {
+              content: counter(curpage);
+              place-self: self-end;
+              display: block;
+              margin-top: 10px;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  /* Add heart decorations around the book */
+  .sprite-wrapper {
+    position: relative;
+  }
+  
+  .sprite-wrapper::before,
+  .sprite-wrapper::after {
+    content: "🌹🌷🌸💐";
+    position: absolute;
+    font-size: 2rem;
+    z-index: 10;
+    pointer-events: none;
+  }
+  
+  .sprite-wrapper::before {
+    top: -30px;
+    left: -30px;
+    transform: rotate(-15deg);
+  }
+  
+  .sprite-wrapper::after {
+    bottom: -30px;
+    right: -30px;
+    transform: rotate(15deg);
+  }
+}
+
+/* Valentine's day content styles */
+.valentine-text {
+  color: #ff1493;
+  font-weight: bold;
+}
+
+.heart-bullet {
+  list-style: none;
+  padding-left: 0;
+}
+
+.heart-bullet li {
+  margin-bottom: 5px;
+}
+
+/* Image caption styles */
+.image-caption {
+  font-size: 0.7rem;
+  text-align: center;
+  color: #ff1493;
+  margin-top: 2px;
+}
+
+@media (width < 748px) {
+  .container {
+    --sprite-th: calc(var(--sprite-sh) / 2.5);
+
+    > h1 {
+      font-size: 1.25rem;
+    }
+
+    .page {
+      > div {
+        font-size: .6rem;
+      }
+    }
+  }
+  
+  .scrapbook-photo {
+    width: calc(50% - 15px) !important; /* 2 photos per row on smaller screens */
+  }
+}
+
+@media (width < 560px) {
+  .container {
+    --sprite-th: calc(var(--sprite-sh) / 4);
+
+    > h1 {
+      font-size: 1rem;
+    }
+
+    .page {
+      > div {
+        font-size: .35rem;
+      }
+
+      &:after {
+        font-size: .5rem;
+      }
+    }
+  }
+  
+  .scrapbook-photo {
+    width: 100% !important; /* 1 photo per row on very small screens */
+  }
+}
+
+@keyframes stay-centered {
+  entry 0% {
+    opacity: 0;
+    translate: -100%;
+  }
+  entry 75%  {
+    opacity: 0;
+    translate: -25%;
+  }
+  entry 100% {
+    opacity: 1;
+    translate: 0%;
+  }
+  exit 0% {
+    opacity: 1;
+    translate: 0%;
+  }
+  exit 50% {
+    opacity: 0;
+    translate: 50%;
+  }
+  exit 100% {
+    opacity: 0;
+    translate: 100%;
+  }
+}
+
+@keyframes count-before {
+  1%,
+  100% {
+    counter-increment: page curpage;
+  }
+}
+
+@keyframes progress {
+  100% {
+    --_progress: 100%;
+  }
+}
+
+@keyframes frame {
+  to {
+    --sprite-fs: var(--sprite-fe);
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-100vh) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion) {
+  * {
+    animation: none;
+  }
+}
+
+</style>
+
+<div class="container">
+  <h1>
+    <span style="color: #fff0f5"> Our Winter Dates </span>
+  </h1>
+  <div class="sprite-wrapper">
+    <div class="book">
+      <!--  Carousel container - updated to 7 slides -->
+      <div class="carousel" style="--slides: 7;">
+        <!--  Bg sprite -->
+        <div class="sprite"></div>
+        
+        <!-- PAGE 1: First Date -->
+        <div class="carousel-item">
+          <div class="page-container">
+            <div class="page left-page">
+              <div>
+                <div class="scrapbook-grid">
+                  <!-- Photos arranged in a grid with individual rotations -->
+                  <div class="scrapbook-photo">
+                    <img src="images/page1_photo1.png" alt="Coffee date" >
+                    <!-- <div class="photo-caption">First coffee</div> -->
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page1_photo2.png" alt="Walking together">
+                    <!-- <div class="photo-caption">Our walk</div> -->
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page1_photo3.jpg" alt="First kiss">
+                    <!-- <div class="photo-caption">First kiss</div> -->
+                  </div>
+                 <div class="scrapbook-photo">
+                    <img src="images/page1_photo4.png" alt="First kiss">
+                    <!-- <div class="photo-caption">First kiss</div> -->
+                  </div>
+                  <!-- <div class="scrapbook-photo">
+                    <img src="images/path/to/your/selfie.jpg" alt="Selfie">
+                    <div class="photo-caption">Us being silly</div>
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/path/to/your/dessert.jpg" alt="Dessert">
+                    <div class="photo-caption">Sweet treats</div>
+                  </div> -->
+                </div>
+                <div class="scrapbook-sticker sticker-1">❤️</div>
+                <div class="scrapbook-sticker sticker-2">🌸</div>
+              </div>
+            </div>
+            <div class="page right-page">
+              <div>
+                <p style="margin: 0; text-indent: 1rem; color: #d43f7a;">
+                  21/12/2025
+                </p>
+                <p style="margin: 0; text-indent: 1rem">
+               So it was the 21st of December, 2025, and I had just returned to Bangladesh the night before. Luckily, she happened to have some work in school that day, so we could literally meet the very next day of my arrival. I couldn't wait to finally see her after 3 whole months of long-distance together. So, the next day came, and I arrived early to school. I thought, why not buy her a bouquet on our first date? So, I picked one up. I waited outside the school gate, and I suddenly noticed her crossing the street. I gasped out of excitement. As she was crossing, the song "Every Breath You Take" was replaying in my head. We finally made contact, and she hugged me tight. It was our first real hug, but it felt like it was our last ever. This was the first time I felt the warmth of her body, and it felt euphoric. She was wearing a light blue cardigan with a white layered scarf, and it looked effortlessly chic and cozy. So, we went to Hot Cake and ordered two coffees and a brownie. As usual, her order was always an Americano. We started taking a lot of pictures together and displayed a lot of affection as we deeply missed each other. When it was starting to get weird in public, we headed to Ajwah, which was right beside. There, we found a comfortable seat, and I showered her with gifts and a letter I bought from Hong Kong. She was so happy with them; it meant a lot. My eyes lit up seeing her smile reading the letter. Then, we took some more pictures, and that's how our first meet really went. It felt nice and fulfilling, as if the dread of missing her was finally gone.
+                </p><br>
+                <p style="margin: 0; text-indent: 1rem">
+                  <!-- <span class="valentine-text">December 14th</span> - the day everything changed. -->
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PAGE 2: Winter Wonderland -->
+        <div class="carousel-item">
+          <div class="page-container">
+            <div class="page left-page">
+              <div>
+                <div class="scrapbook-grid">
+                  <div class="scrapbook-photo">
+                    <img src="images/page2_photo1.png" alt="Snow day">
+                  </div>
+                   <div class="scrapbook-photo">
+                    <img src="images/page2_photo2.png" alt="Snow day">
+                  </div> <div class="scrapbook-photo">
+                    <img src="images/page2_photo3.png" alt="Snow day">
+                  </div> <div class="scrapbook-photo">
+                    <img src="images/page2_photo4.png" alt="Snow day">
+                  </div>
+                </div>
+                <div class="scrapbook-sticker sticker-1">❄️</div>
+                <div class="scrapbook-sticker sticker-2">⛄</div>
+              </div>
+            </div>
+            <div class="page right-page">
+              <div>
+                <p style="margin: 0; color: #d43f7a;">05/01/2026</p>
+                <p style="margin: 0; text-indent: 1rem">
+                  After two weeks of drought, as she was in Sylhet, we had a proper date in a restaurant. I'd say out of all our hangouts, her fit especially ATE that day. It was a woolen black jacket over a white turtleneck. It looked amazingly exquisite on her. Anyways, we sat down at a corner stool, ordered coffee, and again started showing affection. Her hands felt so soft and warm when she was caressing my neck. Also, we took a lot of cute pictures together, and they came out so perfect. We headed to Smashed. I ordered a burger, and she ordered fries, and she was very kind to pay for the meal; I am genuinely grateful for it. I fed her some of the burger, and she fed me some of the fries; it was such a cute moment between us. Well, last but not least, the main highlight of that day was our first ever kiss. Well, it didn't go quite well; she felt I was a lousy kisser 😕 (I need more practice with her 🥀). However, I loved our first kiss; it felt magical as my heart was skipping beats constantly. Her lips felt soft and wet as I pressed it. The whole moment felt spontaneous, like everything in me sparked suddenly. I'd say the whole day was amazing and delightful. 05/01/2026 will forever be engraved in my memory.
+                </p><br>
+                <p style="margin: 0; text-indent: 1rem">
+                  <!-- <span class="valentine-text">January 8th</span> - our snowy paradise. -->
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PAGE 3: Reasons I Love You -->
+        <div class="carousel-item">
+          <div class="page-container">
+            <div class="page left-page">
+              <div>
+                <div class="scrapbook-grid">
+                  <div class="scrapbook-photo">
+                    <img src="images/page3_photo1.png" alt="Your smile">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page3_photo2.png" alt="Your smile">
+                  </div><div class="scrapbook-photo">
+                    <img src="images/page3_photo3.png" alt="Your smile">
+                  </div>
+                </div>
+                <div class="scrapbook-sticker sticker-1">💕</div>
+                <div class="scrapbook-sticker sticker-2">✨</div>
+              </div>
+            </div>
+            <div class="page right-page">
+              <div>
+                <p style="margin: 0; color: #d43f7a;">06/01/2026</p>
+                The next day, on the 6th of January, she suddenly called and said that she was near Raj Bhaiya's coaching and whether I wanted to come. I said YES with all my energy and immediately hurried there. I saw her in Shwapno. She looked cute and comfy in her oversized, soft, beige pullover. We roamed around Shwapno for a while, checking out products and groceries (felt like old couples shopping). Afterwards, we went to Miniso. After looking at stuff for a while, I bought her a set of pink hair clips. She was really happy with it, which made me a lot happier. At night, she put them on during FaceTime, and she looked absolutely pretty with it. Then at the end, we went to Meena Bazaar, ordered coffee for us at Deli France, and took more cute pictures together. She went back home by rickshaw, just when I remembered I should've gone with her to drop her off at her place to make sure she was safe. I felt bad about myself. I immediately texted to ask whether she returned safe after hopping into the car. Thankfully she did. Overall, our whole evening hangout was short and sweet; it felt fulfilling.
+
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PAGE 4: Our Memories -->
+        <div class="carousel-item">
+          <div class="page-container">
+            <div class="page left-page">
+              <div>
+                <div class="scrapbook-grid">
+                    <div class="scrapbook-photo">
+                    <img src="images/page4_photo1.png" alt="Your smile">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page4_photo2.png" alt="Your smile">
+              <!--     </div><div class="scrapbook-photo">
+                    <img src="images/page4_photo3.png" alt="Your smile">
+                  </div> -->
+                     </div><div class="scrapbook-photo">
+                    <img src="images/page4_photo4.png" alt="Your smile">
+                  </div>
+
+                </div>
+                <div class="scrapbook-sticker sticker-1">🌅</div>
+                <div class="scrapbook-sticker sticker-2">🎬</div>
+              </div>
+            </div>
+            <div class="page right-page">
+              <div>
+                <p style="margin: 0; color: #d43f7a;">11/01/2026</p>
+                <p style="margin: 0; text-indent: 1rem">
+                  
+It was the 11th of January, the day after her birthday. She felt quite depressed yesterday, so I was willing to spend a decent day between us to cheer her up. We met at Shimanto Square. I loved the khaki cardigan she wore. Also, the dark shade of red lipstick she wore looked absolutely bold and beautiful on her. Now guess what we did at first. That's right, we went to a cafe and ordered coffee. That moment, I gave her the remaining gifts that I kept secret for her birthday. A divine moment came when I asked her to be my valentine while giving her the moon charm. She said YES. I was so joyous. It truly meant a lot that I could be with someone dearly special during that day (even though we will be long distance again but still). Then, we headed to Rifle Square, and she bought me wireless earbuds she was longing to buy me, as I was actually in need of one for our FaceTimes. It was such a thoughtful present from her; I felt like I didn't thank her enough that time. In return, I bought her wired earphones as her old ones were damaged. She was quite happy too. After that, we went somewhere we were obsessively waiting for: PHOTO BOOTH. We made the most of it and threw in as many cute poses as possible. The photo booth was the best part of the day. I carry those photos in my wallet so I can cherish them wherever I go. Then, we stopped by Shajgoj and were looking at makeup and cosmetics. I noticed she was liking a specific foundation brand. I didn't hesitate and immediately bought it for her along with a kajal pencil (as she ran out of kajal). I just love buying stuff for her; it makes me happy, okay? I bought a niacinamide for myself for treating my acne. After being ragebaited for like a solid 20 minutes for not coming here, her friends finally came. Ngl, I felt kind of awkward but tried to stick with her. We bought some fuchkas and ate. Then we talked for a while with her friends. By 7pm, we decided to part our ways as it was getting late. I'd say the day felt nice.
+                </p>
+                <p style="margin: 0; text-indent: 1rem; margin-top: 0.5rem;">
+                  <!-- <span class="valentine-text">February 2nd</span> - sunset at our spot. -->
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PAGE 5: Romantic Getaway -->
+        <div class="carousel-item">
+          <div class="page-container">
+            <div class="page left-page">
+              <div>
+                <div class="scrapbook-grid">
+                  <div class="scrapbook-photo">
+                    <img src="images/page5_photo1.png" alt="Your smile">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page5_photo2.png" alt="Your smile">
+                  </div><div class="scrapbook-photo">
+                    <img src="images/page5_photo3.png" alt="Your smile">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page5_photo4.png" alt="Your smile">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page5_photo5.png" alt="Your smile">
+                  </div><div class="scrapbook-photo">
+                    <img src="images/page5_photo6.png" alt="Your smile">
+                  </div>
+                </div>
+                <div class="scrapbook-sticker sticker-1">🏔️</div>
+                <div class="scrapbook-sticker sticker-2">✨</div>
+              </div>
+            </div>
+            <div class="page right-page">
+              <div>
+                <p style="margin: 0; color: #d43f7a;">19/01/2026</p>
+                <p style="margin: 0; text-indent: 1rem">
+                  So, on the 19th, she had work in school again; that meant another hangout for us. She came with a slick MAGA outfit. The best part about her fit was how she rolled her thin jacket into a scarf; she looked super hot. Anyways, we stopped by Hot Cake first. This was when she handed me a surprise: it was a customized love letter for me. The letter consisted of all types of themes, starting from Batman, 500 Days of Summer, etc., with some photos of us, a lot of aesthetic designs, and a touch of her cologne. I LOVED it. I LOVED it so much that I kept looking at it again and again. How can a gift be THIS close to the heart? I was about to tear up right then and there. My absolute favorite part of that letter was a section where she compiled all the songs that remind me of her and told me to listen to them whenever I miss her. The words in that letter are really loving; I read them whenever I feel a little depressed to make me feel a little better. The gift means a lot to me, which I will forever cherish. Okay, sorry it's getting too long, but I feel like I haven't really expressed how grateful I am. Anyways, we decided to just ball it and walk to Aarong. There, we just looked at stuff, really expensive stuff, and clothing. We both didn't have the aukat to buy anything, but we took some cute pics, though. Well, to make that trip somewhat fulfilling, we stopped by Grassroots and ordered an iced americano and an iced latte for us. We sat by the window, took a lot of pictures, and recorded ourselves just having a conversation about random stuff and our future. Then, we were planning to walk to Dhanmondi, but her legs were getting quite tired. So, we decided to take a rickshaw. Our rickshaw ride felt so serene and pleasurable. We talked about random stuff like in our FaceTimes, reminisced about places in Dhanmondi, and overall had a great time. Our last stop was Chef's Table, where we had lunch. As always, her boring food taste ordered salad with chicken, which can't even remove hunger as a snack. I ordered a Korean rice bowl and fed some to her so she doesn't starve afterwards. Oh, we ordered two cups of tea, and something embarrassing happened. I accidentally spilled the cup due to my carelessness. I felt so ashamed. But her kind soul didn't mind and tried to help. I called for the maid; later she paid the maid for the troubles. She was so graceful during the whole ordeal. She brushed off my clumsiness and turned it into an act of kindness. At the end, we decided to call it a day. Before leaving, she gave a kiss, and her soft, warm hand scratched and caressed the back of my neck. It felt like I was on Cloud 9. Anyways, we parted ways, taking our own rickshaw back home. Overall, out of all, this was the best hangout with her. Spending this whole day with her felt complete, ideal, peaceful, and fun. Most importantly, everything about that day felt right and in place. This is quite possibly my best day of the month.
+
+
+
+                </p><br>
+                <p style="margin: 0; text-indent: 1rem">
+                  <!-- <span class="valentine-text">January 22-24</span> - our perfect escape. -->
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PAGE 6: Valentine's Preparations -->
+        <div class="carousel-item">
+          <div class="page-container">
+            <div class="page left-page">
+              <div>
+                <div class="scrapbook-grid">
+                  <div class="scrapbook-photo">
+                    <img src="images/page6_photo1.png" alt="Making cards">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page6_photo2.png" alt="Flowers">
+                  </div>
+                   <div class="scrapbook-photo">
+                    <img src="images/page6_photo3.png" alt="Flowers">
+                  </div>
+                   <div class="scrapbook-photo">
+                    <img src="images/page6_photo4.png" alt="Flowers">
+                  </div>
+                  
+                </div>
+                <div class="scrapbook-sticker sticker-1">💌</div>
+                <div class="scrapbook-sticker sticker-2">🎀</div>
+              </div>
+            </div>
+            <div class="page right-page">
+              <div>
+                <p style="margin: 0; color: #d43f7a;">24/01/2026</p>
+                <p style="margin: 0; text-indent: 1rem">
+                  So 24th of January was quite a normal day for us. We met at BFC. She looked incredible in an elegant navy blue shirt. However. the most highlighting part about her look was how she did her eyeliner makeup. She did a stroke past her eyelids and just ATE the look. Her eyes were just gorgeous. She brought her friend with her as well. As usual, we walked around Dhanmondi streets holding hands for the most part while chit-chatting. Her friend, Namira, was fun to hangout with; she might be the perfect chaperone for us. As we didn't have much to do, we stopped by unimart. We browsed through products with the thought of buying but never really bought them lol: that's how our shopping usually go by. Then, we grabbed coffee and brownie at Chef's table and took some pictures. After Namira left, we spent some more time together. At the end, we gave each other a kiss and left.
+                </p><br>
+                <p style="margin: 0; text-indent: 1rem">
+                  <!-- <span class="valentine-text">February 13th</span> - anticipation. -->
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PAGE 7: Happy Valentine's Day -->
+        <div class="carousel-item">
+          <div class="page-container">
+            <div class="page left-page">
+              <div>
+                <div class="scrapbook-grid">
+                  <div class="scrapbook-photo">
+                    <img src="images/page7_photo1.png" alt="Romantic dinner">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page7_photo2.png" alt="Romantic dinner">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page7_photo3.png" alt="Romantic dinner">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page7_photo4.png" alt="Romantic dinner">
+                  </div>
+                  <div class="scrapbook-photo">
+                    <img src="images/page7_photo5.png" alt="Romantic dinner">
+                  </div>
+                  
+                  
+                </div>
+                <div class="scrapbook-sticker sticker-1">❤️</div>
+                <div class="scrapbook-sticker sticker-2">🌹</div>
+              </div>
+            </div>
+            <div class="page right-page">
+              <div>
+                <p style="margin: 0; color: #d43f7a;">Happy Valentine's Day!</p>
+                <p style="margin: 0; text-indent: 1rem">
+                  Dear Taneesha, <br>
+
+The moment you came into my life, everything feels so blissful around here. Sometimes, I fail to express how happy you make me, how you give me support and space to improve on myself and how you give great care and affection for me. You are not only my girlfriend, but also, my best friend, my go-to person where I can feel safe and calm and a really supportive partner. Hell, even after our fights, I have nobody else but come back to you for comfort as you are the only one whom I can seek for peace in my mind. You are the only one who always reassures and calms me when I overthink a lot of negative stuff. You have always been patient and considerate when I can be otherwise a lot annoying and frustrating. There is literally nobody else better than you. There is no one else I want in my life. You are everything I always wanted in someone who I can be emotionally close with. I am aware that I have been quite rough to deal with. Unfortunately, I couldn't be the ideal partner for you as I failed to give you the relationship you loved to be in. There are mistakes I can't fix anymore. However, there are still things I'm willing to fix, willing to change myself for you, just so you can love us. It will take time, but the last thing I would want is give up on our love. I just want you to be happy Taneesha. I hope you get into a good university with great scholarship and live the life you dream of, make new and awesome friends, live fully independently and have a successful journey in your undergraduate. I will save up and try to visit you wherever you go in this upcoming winter. I'm sorry I couldn't be there with you this valentine's day. If I was in Bangladesh, I would've taken you to Koi The for drinks, then have Tehari together for lunch in front of Tehari Ghor, then at last have a serene walk at Dhanmondi Lake. I hope we can be together so we can experience future ones together. Anyways, I want to remind you that you are the best thing that has happened to me. Thank you for being such an incredible and special person whom I'm absolutely lucky call my first valentine. I will always keep loving you no matter how hard things get between us.
+                </p>
+                <p style="margin-top: 2rem; text-align: center; font-size: 2rem;"></p>
+                <p style="margin-top: 1rem; text-align: center;">Forever yours,</p>
+                <p style="text-align: center; font-size: 1.2rem;">Sagnik</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
